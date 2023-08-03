@@ -20,7 +20,7 @@ Obj 文件有一个标准方法来存储有关网格的额外信息。给定一�
 obj 文件，可以用以下命令读取
 
 ````
-  顶点、面、aux = load_obj(文件名)
+  verts, faces, aux = load_obj(filename)
 ````
 
 将“verts”设置为顶点的 (V,3) 张量，将“faces.verts_idx”设置为
@@ -31,7 +31,8 @@ obj 文件，可以用以下命令读取
 其 NamedTuple 结构中的纹理和材质。包含一个 Meshes 对象
 可以使用以下命令仅从顶点和面创建单个网格
 ````
-    网格 = 网格(verts=[verts], faces=[faces.verts_idx])
+    <!-- 网格 = 网格(verts=[verts], faces=[faces.verts_idx]) -->
+    meshes = Meshes(verts=[verts], faces=[faces.verts_idx])
 ````
 
 如果`.obj`中有纹理信息，它可以用来初始化一个
@@ -40,20 +41,20 @@ obj 文件，可以用以下命令读取
 整个网格例如
 
 ````
-verts_uvs = aux.verts_uvs[无, ...] # (1, V, 2)
-faces_uvs = faces.textures_idx[无, ...] # (1, F, 3)
+verts_uvs = aux.verts_uvs[None, ...]  # (1, V, 2)
+faces_uvs = faces.textures_idx[None, ...]  # (1, F, 3)
 tex_maps = aux.texture_images
 
 # tex_maps是{材质名称：纹理图像}的字典。
 # 拍摄第一张图像：
-纹理图像 = 列表(tex_maps.values())[0]
-纹理图像 = 纹理图像[无, ...] # (1, H, W, 3)
+texture_image = list(tex_maps.values())[0]
+texture_image = texture_image[None, ...]  # (1, H, W, 3)
 
 # 创建一个纹理对象
-tex = 纹理（verts_uvs=verts_uvs，faces_uvs=faces_uvs，maps=texture_image）
+tex = Textures(verts_uvs=verts_uvs, faces_uvs=faces_uvs, maps=texture_image)
 
 # 使用纹理初始化网格
-网格=网格（顶点= [顶点]，面= [faces.verts_idx]，纹理= tex）
+meshes = Meshes(verts=[verts], faces=[faces.verts_idx], textures=tex)
 ````
 
 `load_objs_as_meshes` 函数提供了这个过程。
@@ -64,12 +65,14 @@ Ply 文件存储附加信息的方式很灵活。PyTorch3D
 提供一个仅从层文件中读取顶点和面的函数。
 电话
 ````
-    顶点，面= load_ply（文件名）
+    <!-- 顶点，面= load_ply（文件名） -->
+    verts, faces = load_ply(filename)
 ````
 将“verts”设置为顶点的 (V,3)-张量，并将“faces”设置为 (F,3)-
 面的每个角的顶点索引的张量。面对哪些
 不是三角形就会被分割成三角形。包含一个 Meshes 对象
 可以使用此数据创建单个网格
 ````
-    网格=网格（顶点=[顶点]，面=[面]）
+    <!-- 网格=网格（顶点=[顶点]，面=[面]） -->
+    meshes = Meshes(verts=[verts], faces=[faces])
 ````

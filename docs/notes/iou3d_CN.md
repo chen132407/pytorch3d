@@ -1,3 +1,8 @@
+<!--
+ * @Author: tiger
+ * @Date: 2023-07-23 08:18:07
+ * @FilePath: \AI_github_example\CV_git\pytorch3d-main\pytorch3d\docs\notes\iou3d_CN.md
+-->
 ---
 隐藏标题：true
 侧边栏标签：IoU3D
@@ -60,9 +65,12 @@ Objectron 的算法使用 [Sutherland-Hodgman 算法][clipalgo] 计算两个框�
 ## 用法和代码
 
 ````蟒蛇
-从 pytorch3d.ops 导入 box3d_overlap
+<!-- 从 pytorch3d.ops 导入 box3d_overlap
 # 假设输入：boxes1 (M, 8, 3) 和boxs2 (N, 8, 3)
-交集_vol，iou_3d = box3d_overlap（框1，框2）
+交集_vol，iou_3d = box3d_overlap（框1，框2） -->
+from pytorch3d.ops import box3d_overlap
+# Assume inputs: boxes1 (M, 8, 3) and boxes2 (N, 8, 3)
+intersection_vol, iou_3d = box3d_overlap(boxes1, boxes2)
 ````
 
 有关更多详细信息，请阅读 [iou_box3d.py](https://github.com/facebookresearch/pytorch3d/blob/main/pytorch3d/ops/iou_box3d.py)。

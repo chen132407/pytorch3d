@@ -11,7 +11,7 @@ sidebar_label：文件IO
 
 例如，要加载网格，您可能会这样做
 ````
-从 pytorch3d.io 导入 IO
+from pytorch3d.io import IO
 
 device=torch.device("cuda:0")
 mesh = IO().load_mesh("mymesh.obj", device=device)
@@ -19,7 +19,7 @@ mesh = IO().load_mesh("mymesh.obj", device=device)
 
 要保存点云，您可能会这样做
 ````
-pcl = 点云(...)
+pcl = Pointclouds(...)
 IO().save_pointcloud(pcl, "output_pointcloud.ply")
 ````
 
