@@ -5,7 +5,8 @@ dist/
 *-checkpoint.ipynb
 **/.ipynb_checkpoints
 **/.ipynb_checkpoints/**
-
+**/pytorch3d.egg-info
+**/pytorch3d.egg-info/**
 
 # Docusaurus site
 website/yarn.lock

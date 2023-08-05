@@ -5,6 +5,15 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+
+# 开发者工具运行  vs2022 X64....
+# set DISTUTILS_USE_SDK=1
+# set CUB_HOME= C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.6\include
+# 或 CUB_HOME 配置 C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\cub-2.1.0\cub
+#  CUDA_PATH 指向v11.8
+#  pip install -e .
+# python  setup.py install
+
 import glob
 import os
 import runpy
@@ -65,8 +74,17 @@ def get_extensions():
         # With CUDA 11.0 we can't use the cudatoolkit's version of cub.
         # We take the risk that CUB and Thrust are incompatible, because
         # we aren't using parts of Thrust which actually use CUB.
+        #Thrust仅用于其元组对象。
+        #对于CUDA 11.0，我们不能使用cudatoolkit版本的cub。
+        #我们冒着CUB和Thrust不兼容的风险，因为
+        #我们没有使用Thrust中实际使用CUB的部分。
+
         define_macros += [("THRUST_IGNORE_CUB_VERSION_CHECK", None)]
+        # print("define_macros THRUST_IGNORE_CUB_VERSION_CHECK ====>",define_macros)
         cub_home = os.environ.get("CUB_HOME", None)
+        # print("define_macros CUB_HOME ====>",define_macros)
+        # 重新指向位置
+        # cub_home = "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.8\\include\\cub"
         nvcc_args = [
             "-DCUDA_HAS_FP16=1",
             "-D__CUDA_NO_HALF_OPERATORS__",
@@ -174,7 +192,8 @@ setup(
         ]
     },
     ext_modules=get_extensions(),
-    cmdclass={"build_ext": BuildExtension},
+    # cmdclass={"build_ext": BuildExtension},
+    cmdclass={'build_ext': BuildExtension.with_options(use_ninja=False)},
     package_data={
         "": ["*.json"],
     },
