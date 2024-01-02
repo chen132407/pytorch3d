@@ -1576,8 +1576,6 @@ class Meshes:
         Returns:
           Meshes object of length `sum(len(ids) for ids in face_indices)`.
 
-        Submeshing only works with no textures or with the TexturesVertex texture.
-
         Example 1:
 
         If `meshes` has batch size 1, and `face_indices` is a 1D LongTensor,
@@ -1616,16 +1614,13 @@ class Meshes:
         sub_verts = []
         sub_verts_ids = []
         sub_faces = []
-        sub_face_ids = []
 
         for face_ids_per_mesh, faces, verts in zip(
             face_indices, self.faces_list(), self.verts_list()
         ):
             sub_verts_ids.append([])
-            sub_face_ids.append([])
             for submesh_face_ids in face_ids_per_mesh:
                 faces_to_keep = faces[submesh_face_ids]
-                sub_face_ids[-1].append(faces_to_keep)
 
                 # Say we are keeping two faces from a mesh with six vertices:
                 # faces_to_keep = [[0, 6, 4],
@@ -1652,7 +1647,7 @@ class Meshes:
             verts=sub_verts,
             faces=sub_faces,
             textures=(
-                self.textures.submeshes(sub_verts_ids, sub_face_ids)
+                self.textures.submeshes(sub_verts_ids, face_indices)
                 if self.textures
                 else None
             ),
@@ -1698,7 +1693,7 @@ def join_meshes_as_batch(meshes: List[Meshes], include_textures: bool = True) ->
     # Now we know there are multiple meshes and they have textures to merge.
     all_textures = [mesh.textures for mesh in meshes]
     first = all_textures[0]
-    tex_types_same = all(type(tex) == type(first) for tex in all_textures)
+    tex_types_same = all(type(tex) == type(first) for tex in all_textures)  # noqa: E721
 
     if not tex_types_same:
         raise ValueError("All meshes in the batch must have the same type of texture.")

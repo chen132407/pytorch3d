@@ -20,10 +20,11 @@ from pytorch3d.renderer.mesh import TexturesVertex
 from pytorch3d.structures import Meshes, Pointclouds
 from pytorch3d.utils import torus
 
-from .common_testing import TestCaseMixin
+from .common_testing import get_tests_dir, TestCaseMixin
 
 
 global_path_manager = PathManager()
+DATA_DIR = get_tests_dir() / "data"
 
 
 def _load_ply_raw(stream):
@@ -307,9 +308,9 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
 
     def test_save_ply_invalid_shapes(self):
         # Invalid vertices shape
+        verts = torch.FloatTensor([[0.1, 0.2, 0.3, 0.4]])  # (V, 4)
+        faces = torch.LongTensor([[0, 1, 2]])
         with self.assertRaises(ValueError) as error:
-            verts = torch.FloatTensor([[0.1, 0.2, 0.3, 0.4]])  # (V, 4)
-            faces = torch.LongTensor([[0, 1, 2]])
             save_ply(BytesIO(), verts, faces)
         expected_message = (
             "Argument 'verts' should either be empty or of shape (num_verts, 3)."
@@ -317,9 +318,9 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
         self.assertTrue(expected_message, error.exception)
 
         # Invalid faces shape
+        verts = torch.FloatTensor([[0.1, 0.2, 0.3]])
+        faces = torch.LongTensor([[0, 1, 2, 3]])  # (F, 4)
         with self.assertRaises(ValueError) as error:
-            verts = torch.FloatTensor([[0.1, 0.2, 0.3]])
-            faces = torch.LongTensor([[0, 1, 2, 3]])  # (F, 4)
             save_ply(BytesIO(), verts, faces)
         expected_message = (
             "Argument 'faces' should either be empty or of shape (num_faces, 3)."
@@ -777,6 +778,19 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
             self.assertListEqual(
                 data["minus_ones"], [-1, 255, -1, 65535, -1, 4294967295]
             )
+
+    def test_load_uvs(self):
+        io = IO()
+        mesh = io.load_mesh(DATA_DIR / "uvs.ply")
+        self.assertEqual(mesh.textures.verts_uvs_padded().shape, (1, 8, 2))
+        self.assertClose(
+            mesh.textures.verts_uvs_padded()[0],
+            torch.tensor([[0, 0]] + [[0.2, 0.3]] * 6 + [[0.4, 0.5]]),
+        )
+        self.assertEqual(
+            mesh.textures.faces_uvs_padded().shape, mesh.faces_padded().shape
+        )
+        self.assertEqual(mesh.textures.maps_padded().shape, (1, 512, 512, 3))
 
     def test_bad_ply_syntax(self):
         """Some syntactically bad ply files."""

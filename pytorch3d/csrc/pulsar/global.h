@@ -30,11 +30,18 @@
 #define GLOBAL __global__
 #define RESTRICT __restrict__
 #define DEBUGBREAK()
+#ifdef __NVCC_DIAG_PRAGMA_SUPPORT__
+#pragma nv_diag_suppress 1866
+#pragma nv_diag_suppress 2941
+#pragma nv_diag_suppress 2951
+#pragma nv_diag_suppress 2967
+#else
 #pragma diag_suppress = attribute_not_allowed
 #pragma diag_suppress = 1866
 #pragma diag_suppress = 2941
 #pragma diag_suppress = 2951
 #pragma diag_suppress = 2967
+#endif
 #else // __CUDACC__
 #define INLINE inline
 #define HOST
@@ -49,6 +56,7 @@
 #pragma clang diagnostic pop
 #ifdef WITH_CUDA
 #include <ATen/cuda/CUDAContext.h>
+#include <vector_functions.h>
 #else
 #ifndef cudaStream_t
 typedef void* cudaStream_t;
@@ -67,13 +75,6 @@ struct float3 {
 };
 #endif
 namespace py = pybind11;
-inline float3 make_float3(const float& x, const float& y, const float& z) {
-  float3 res;
-  res.x = x;
-  res.y = y;
-  res.z = z;
-  return res;
-}
 
 inline bool operator==(const float3& a, const float3& b) {
   return a.x == b.x && a.y == b.y && a.z == b.z;

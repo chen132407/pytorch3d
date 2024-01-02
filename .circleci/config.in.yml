@@ -64,7 +64,7 @@ jobs:
       CUDA_VERSION: "11.3"
     resource_class: gpu.nvidia.small.multi
     machine:
-      image: ubuntu-2004:202101-01
+      image: linux-cuda-11:default
     steps:
       - checkout
       - <<: *setupcuda
@@ -116,7 +116,7 @@ jobs:
       # so we aren't running the tests.
       - run:
           name: build
-          no_output_timeout: 20m
+          no_output_timeout: 40m
           command: MAX_JOBS=15 TEST_FLAG=--no-test python3 packaging/build_conda.py
       - store_artifacts:
           path: /opt/conda/conda-bld/linux-64
@@ -128,7 +128,7 @@ jobs:
   binary_linux_conda_cuda:
     <<: *binary_common
     machine:
-      image: ubuntu-1604-cuda-10.2:202012-01
+      image: linux-cuda-11:default
     resource_class: gpu.nvidia.small.multi
     steps:
     - checkout
@@ -145,7 +145,7 @@ jobs:
           docker pull $TESTRUN_DOCKER_IMAGE
     - run:
         name: Build and run tests
-        no_output_timeout: 20m
+        no_output_timeout: 40m
         command: |
           set -e
 
@@ -156,24 +156,6 @@ jobs:
 
           docker run --gpus all  --ipc=host -v $(pwd):/remote -w /remote ${VARS_TO_PASS} ${TESTRUN_DOCKER_IMAGE} python3 ./packaging/build_conda.py
 
-  binary_macos_wheel:
-    <<: *binary_common
-    macos:
-      xcode: "13.4.1"
-    steps:
-      - checkout
-      - run:
-          # Cannot easily deduplicate this as source'ing activate
-          # will set environment variables which we need to propagate
-          # to build_wheel.sh
-          command: |
-            curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
-            sh conda.sh -b
-            source $HOME/miniconda3/bin/activate
-            packaging/build_wheel.sh
-      - store_artifacts:
-          path: dist
-
 workflows:
   version: 2
   build_and_test:
@@ -182,23 +164,8 @@ workflows:
       #     context: DOCKERHUB_TOKEN
       {{workflows()}}
       - binary_linux_conda_cuda:
-          name: testrun_conda_cuda_py38_cu102_pyt190
+          name: testrun_conda_cuda_py310_cu117_pyt201
           context: DOCKERHUB_TOKEN
-          python_version: "3.8"
-          pytorch_version: '1.9.0'
-          cu_version: "cu102"
-      - binary_macos_wheel:
-          cu_version: cpu
-          name: macos_wheel_py3.8_cpu
-          python_version: '3.8'
-          pytorch_version: '1.13.0'
-      - binary_macos_wheel:
-          cu_version: cpu
-          name: macos_wheel_py3.9_cpu
-          python_version: '3.9'
-          pytorch_version: '1.13.0'
-      - binary_macos_wheel:
-          cu_version: cpu
-          name: macos_wheel_py3.10_cpu
-          python_version: '3.10'
-          pytorch_version: '1.13.0'
+          python_version: "3.10"
+          pytorch_version: '2.0.1'
+          cu_version: "cu117"

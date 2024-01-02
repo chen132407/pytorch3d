@@ -549,6 +549,33 @@ class TexturesAtlas(TexturesBase):
 
         return texels
 
+    def submeshes(
+        self,
+        vertex_ids_list: List[List[torch.LongTensor]],
+        faces_ids_list: List[List[torch.LongTensor]],
+    ) -> "TexturesAtlas":
+        """
+        Extract a sub-texture for use in a submesh.
+
+        If the meshes batch corresponding to this TextureAtlas contains
+        `n = len(faces_ids_list)` meshes, then self.atlas_list()
+        will be of length n. After submeshing, we obtain a batch of
+        `k = sum(len(v) for v in atlas_list` submeshes (see Meshes.submeshes). This
+        function creates a corresponding TexturesAtlas object with `atlas_list`
+        of length `k`.
+        """
+        if len(faces_ids_list) != len(self.atlas_list()):
+            raise IndexError(
+                "faces_ids_list must be of " "the same length as atlas_list."
+            )
+
+        sub_features = []
+        for atlas, faces_ids in zip(self.atlas_list(), faces_ids_list):
+            for faces_ids_submesh in faces_ids:
+                sub_features.append(atlas[faces_ids_submesh])
+
+        return self.__class__(sub_features)
+
     def faces_verts_textures_packed(self) -> torch.Tensor:
         """
         Samples texture from each vertex for each face in the mesh.
@@ -995,9 +1022,13 @@ class TexturesUV(TexturesBase):
         #   is the left-top pixel of input, and values x = 1, y = 1 is the
         #   right-bottom pixel of input.
 
-        pixel_uvs = pixel_uvs * 2.0 - 1.0
+        # map to a range of [-1, 1] and flip the y axis
+        pixel_uvs = torch.lerp(
+            pixel_uvs.new_tensor([-1.0, 1.0]),
+            pixel_uvs.new_tensor([1.0, -1.0]),
+            pixel_uvs,
+        )
 
-        texture_maps = torch.flip(texture_maps, [2])  # flip y axis of the texture map
         if texture_maps.device != pixel_uvs.device:
             texture_maps = texture_maps.to(pixel_uvs.device)
         texels = F.grid_sample(
@@ -1035,8 +1066,12 @@ class TexturesUV(TexturesBase):
         texture_maps = self.maps_padded()  # NxHxWxC
         texture_maps = texture_maps.permute(0, 3, 1, 2)  # NxCxHxW
 
-        faces_verts_uvs = faces_verts_uvs * 2.0 - 1.0
-        texture_maps = torch.flip(texture_maps, [2])  # flip y axis of the texture map
+        # map to a range of [-1, 1] and flip the y axis
+        faces_verts_uvs = torch.lerp(
+            faces_verts_uvs.new_tensor([-1.0, 1.0]),
+            faces_verts_uvs.new_tensor([1.0, -1.0]),
+            faces_verts_uvs,
+        )
 
         textures = F.grid_sample(
             texture_maps,
@@ -1322,6 +1357,60 @@ class TexturesUV(TexturesBase):
         # (N, V) is not guaranteed to be the same
         return (self.faces_uvs_padded().shape[0:2] == (batch_size, max_num_faces)) and (
             self.verts_uvs_padded().shape[0] == batch_size
+        )
+
+    def submeshes(
+        self,
+        vertex_ids_list: List[List[torch.LongTensor]],
+        faces_ids_list: List[List[torch.LongTensor]],
+    ) -> "TexturesUV":
+        """
+        Extract a sub-texture for use in a submesh.
+
+        If the meshes batch corresponding to this  TexturesUV contains
+        `n = len(faces_ids_list)` meshes, then self.faces_uvs_padded()
+        will be of length n. After submeshing, we obtain a batch of
+        `k = sum(len(f) for f in faces_ids_list` submeshes (see Meshes.submeshes). This
+        function creates a corresponding  TexturesUV object with `faces_uvs_padded`
+        of length `k`.
+
+        Args:
+            vertex_ids_list: Not used when submeshing TexturesUV.
+
+            face_ids_list: A list of length equal to self.faces_uvs_padded. Each
+                element is a LongTensor listing the face ids that the submesh keeps in
+                each respective mesh.
+
+
+        Returns:
+            A  "TexturesUV in which faces_uvs_padded, verts_uvs_padded, and maps_padded
+            have length sum(len(faces) for faces in faces_ids_list)
+        """
+
+        if len(faces_ids_list) != len(self.faces_uvs_padded()):
+            raise IndexError(
+                "faces_uvs_padded must be of " "the same length as face_ids_list."
+            )
+
+        sub_faces_uvs, sub_verts_uvs, sub_maps = [], [], []
+        for faces_ids, faces_uvs, verts_uvs, map_ in zip(
+            faces_ids_list,
+            self.faces_uvs_padded(),
+            self.verts_uvs_padded(),
+            self.maps_padded(),
+        ):
+            for faces_ids_submesh in faces_ids:
+                sub_faces_uvs.append(faces_uvs[faces_ids_submesh])
+                sub_verts_uvs.append(verts_uvs)
+                sub_maps.append(map_)
+
+        return self.__class__(
+            sub_maps,
+            sub_faces_uvs,
+            sub_verts_uvs,
+            self.padding_mode,
+            self.align_corners,
+            self.sampling_mode,
         )
 
 

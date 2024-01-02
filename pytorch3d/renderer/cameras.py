@@ -107,7 +107,7 @@ class CamerasBase(TensorProperties):
 
     def unproject_points(self, xy_depth: torch.Tensor, **kwargs):
         """
-        Transform input points from camera coodinates (NDC or screen)
+        Transform input points from camera coordinates (NDC or screen)
         to the world / camera coordinates.
 
         Each of the input points `xy_depth` of shape (..., 3) is
@@ -401,7 +401,9 @@ class CamerasBase(TensorProperties):
         kwargs = {}
 
         tensor_types = {
+            # pyre-fixme[16]: Module `cuda` has no attribute `BoolTensor`.
             "bool": (torch.BoolTensor, torch.cuda.BoolTensor),
+            # pyre-fixme[16]: Module `cuda` has no attribute `LongTensor`.
             "long": (torch.LongTensor, torch.cuda.LongTensor),
         }
         if not isinstance(
